@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	  <meta charset="utf-8">
+	  <meta name="description" content="Viewer for disk catalogues created with DiscScanner." />
+	  <title>DiskScanner Viewer</title>
+	  <link href='style.css' rel='stylesheet' type='text/css'>
+	</head>
+	<script>
+		var obj_csv = 
+		{
+		    size:0,
+		    dataFile:[]
+		};
+		 
+		function readFile(input)
+		{
+			if (input.files && input.files[0])
+			{
+				let reader = new FileReader();
+				reader.readAsText(input.files[0]);
+				reader.onload = function (e)
+				{
+					obj_csv.size = e.total;
+					obj_csv.dataFile = e.target.result
+					parseData(obj_csv.dataFile)
+				}
+			}
+		}
+
+		function sanitize(string, sanitizeForQuery) 
+		{
+			newString = string.replace(/\\/g, "/");
+			newString = newString.replace("&", "\&");
+			newString = newString.replace("'", "\'");
+			newString = newString.replace("\"", "\\\"");
+			return newString;
+		}
+
+		var Node = function(fullPath, size, sizeUnit)
+		{
+			this.fullPath = fullPath;
+			pathElements = fullPath.split("\\");
+			this.pathLength = pathElements.length;
+			this.folderName = pathElements[this.pathLength - 1];
+			pathElements.pop();
+			this.parent = pathElements.join("\\");
+			this.size = size;
+			this.sizeUnit = sizeUnit;
+		}
+
+		function createFolder(node, i, openNode)
+		{
+		    let color = "";
+
+		    let opacity = 100;
+		    switch(node.sizeUnit)
+		    {
+		    	case "B":
+		    		color = "200 200 200";
+		    		break;
+		    	case "KB":
+		    		color = "200 200 200";
+		    		break;
+		    	case "MB":
+		    		color = "150 150 150";
+		    		opacity = (node.size / 1024 * 50 + 25).toFixed(0);
+		    		break;
+		    	case "GB":
+		    		if (node.size > 100)
+		    		{
+			    		color = "200 60 175";
+		    			opacity = (node.size / 1024 * 75 + 25).toFixed(0);
+		    		}
+		    		else
+		    		{
+			    		color = "127 255 212";
+		    			opacity = (node.size / 100 * 75 + 25).toFixed(0);
+		    		}
+		    		break;
+		    	case "TB":
+		    		color = "255 0 0";
+		    		opacity = (node.size / 4 * 50 + 50).toFixed(0);
+		    		break;
+		    }
+		    output = "<input type=checkbox id='c_"+i+"'";
+		    if (!openNode) output += " disabled";
+		    output += " /><label for='c_"+i+"'>"+node.folderName + "</label><span class=diskSpace style='background-color: rgb("+ color + " / " + opacity + "%)'>"+ node.size + " "+ node.sizeUnit + "</span>";
+		    return output;
+		}
+
+		function parseData(data)
+		{
+			var documentFragment = document.createDocumentFragment();
+		    let lbreak = data.split("\n");
+		    let folderCount = lbreak.length;
+		    let driveInfo = lbreak.shift().split(",");
+		    const driveInfoLi = document.getElementById("driveInfo");
+		    driveInfoLi.innerHTML = "<label>"+driveInfo[0] + "</label> <span class=diskSpace>"+driveInfo[1] +" "+ driveInfo[2]+ "</span>"
+		    lbreak.sort((a, b) => a.localeCompare(b));
+		    let nodeArray = [];
+
+		    lbreak.forEach(res =>
+		    {
+		        rowData = res.substring(1).split(",");
+		        if (rowData[0]!="") nodeArray.push(new Node(rowData[0], rowData[1], rowData[2]));
+		    });
+
+		    const mainTree = document.getElementById("mainTree");
+		    mainTree.textContent = '';
+		    
+		    let progress = "0";
+		    let previouslyAnnouncedProgress = 0;
+		    let i = 0;
+			var startPerformance = performance.now();
+			let content = "";
+
+		    nodeArray.forEach(node => 
+		    {
+		    	let nextNodeLength = 0;
+		    	if (nodeArray[i+1]!=null) nextNodeLength = nodeArray[i+1].pathLength;
+		    	let openNode = false;
+		    	if (nextNodeLength > node.pathLength) openNode = true; 
+		    	content += "<li>"+createFolder(node, i, openNode);
+
+		    	if (nextNodeLength > node.pathLength) content += "<ul id='l_"+i+"'>";
+		    	else if (nextNodeLength < node.pathLength)
+		    	{
+		    		for (j = 0; j < (node.pathLength - nextNodeLength); j++)
+		    		{
+		    			content += "</li></ul>";
+		    		}
+		    		content += "</li>";
+		    	}
+		    	else content += "</li>";
+
+		    	i++;
+		    	progress = (i/folderCount*100);
+		    	if (progress > previouslyAnnouncedProgress +1) {
+		    		console.log(progress.toFixed(2)+"%");
+		    		previouslyAnnouncedProgress = progress;
+		    	}
+		    });
+		    mainTree.innerHTML = content;
+			var endPerformance = performance.now();
+		    console.log('File loaded in ' + (endPerformance - startPerformance)/1000 + 's.')
+
+		}
+	</script>
+	<body>
+		<input type="file" id="uploadfile" onChange="readFile(this)">
+		<ul class=tree> 
+			<li><span id=driveInfo></span>
+				<ul id=mainTree>
+				</ul>
+			</li>
+		</ul>
+
+	</body>
+</html>
