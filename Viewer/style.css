@@ -1,0 +1,42 @@
+body
+{
+	background-color: whitesmoke;
+	color: darkslategray;
+	font-family: monospace;
+	font-weight: 100;
+}
+
+.tree
+{
+}
+
+.tree label
+{
+	display: inline-block;
+	width: 400px;
+}
+
+.tree label:hover
+{
+	background-color: white;
+}
+
+.tree, .tree ul
+{
+	list-style: none;
+}
+.tree input ~ ul { display: none; }
+
+.tree input:checked ~ ul { display: block; }
+
+.diskSpace
+{
+    background-color: #ddd;
+    padding: 0px 5px 0px 5px;
+    width: 150px;
+    height: 15px;
+    max-height: 15px;
+    text-align: center;
+    white-space: nowrap;
+    display: inline-block;
+}
