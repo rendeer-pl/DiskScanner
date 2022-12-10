@@ -54,7 +54,7 @@
 		    let color = "";
 
 		    let opacity = 100;
-		    switch(node.sizeUnit)
+		    switch(node.sizeUnit.trim())
 		    {
 		    	case "B":
 		    		color = "200 200 200";
@@ -82,6 +82,10 @@
 		    		color = "255 0 0";
 		    		opacity = (node.size / 4 * 50 + 50).toFixed(0);
 		    		break;
+		    	default:
+		    		color = "255 255 255";
+		    		opacity = 100;
+		    		console.error("Unknown size unit: '" + node.sizeUnit + "' when processing '" + node.fullPath + "'.");
 		    }
 		    output = "<input type=checkbox id='c_"+i+"'";
 		    if (!openNode) output += " disabled";
@@ -103,7 +107,7 @@
 		    lbreak.forEach(res =>
 		    {
 		        rowData = res.substring(1).split(",");
-		        if (rowData[0]!="") nodeArray.push(new Node(rowData[0], rowData[1], rowData[2]));
+		        if (rowData[0]!="") nodeArray.push(new Node(rowData[0], rowData[rowData.length -2], rowData[rowData.length - 1]));
 		    });
 
 		    const mainTree = document.getElementById("mainTree");
